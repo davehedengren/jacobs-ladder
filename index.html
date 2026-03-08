@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jacob's Ladder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-dark: #0a0c1a;
+    --bg-card: #141828;
+    --bg-card-hover: #1a2040;
+    --accent: #e8b84a;
+    --accent-glow: #f0cc6a;
+    --text: #e8e6e1;
+    --text-dim: #7a7d8b;
+    --positive: #4ade80;
+    --negative: #f87171;
+    --neutral: #94a3b8;
+    --heaven-gold: #ffd700;
+    --heaven-glow: rgba(255, 215, 0, 0.15);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Starfield background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 30% 50%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 90% 70%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 15% 80%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 45% 65%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 75% 15%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 85% 90%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 25% 35%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 60% 85%, rgba(255,255,255,0.2), transparent),
+      radial-gradient(1px 1px at 5% 55%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 95% 25%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(1px 1px at 40% 95%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 55% 45%, rgba(255,255,255,0.2), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #game {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  .screen { display: none; opacity: 0; transition: opacity 0.5s ease; }
+  .screen.active { display: block; opacity: 1; }
+  .screen.fade-in { animation: fadeIn 0.6s ease forwards; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  @keyframes heavenlyPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.9; } }
+  @keyframes scorePopIn { 0% { opacity: 0; transform: scale(0.5); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes floatAngel {
+    0% { transform: translateY(0px) translateX(0px); opacity: 0; }
+    15% { opacity: 0.6; }
+    85% { opacity: 0.6; }
+    100% { transform: translateY(-280px) translateX(40px); opacity: 0; }
+  }
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  @keyframes stepBounce {
+    0% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
+    80% { transform: translateY(-6px); }
+    100% { transform: translateY(0); }
+  }
+
+  /* Title Screen */
+  .title-container { text-align: center; padding-top: 12vh; max-width: 600px; margin: 0 auto; }
+  .title-pre { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 6px; color: var(--text-dim); margin-bottom: 12px; }
+  .title-main {
+    font-size: 3.4rem; font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), #f0d878, var(--accent));
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1.1; margin-bottom: 12px;
+  }
+  .title-scripture {
+    font-size: 0.95rem; color: var(--text-dim); margin-bottom: 8px;
+    font-style: italic; line-height: 1.6; max-width: 500px; margin-left: auto; margin-right: auto;
+  }
+  .title-ref { font-size: 0.8rem; color: var(--accent); font-weight: 600; margin-bottom: 40px; }
+
+  .btn {
+    display: inline-block; padding: 14px 40px;
+    background: linear-gradient(135deg, var(--accent), #c49030);
+    color: var(--bg-dark); font-weight: 700; font-size: 1rem;
+    border: none; border-radius: 50px; cursor: pointer;
+    transition: all 0.3s ease; font-family: inherit; letter-spacing: 1px;
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(232, 184, 74, 0.35); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; pointer-events: none; }
+
+  .name-input {
+    background: var(--bg-card); border: 2px solid rgba(232, 184, 74, 0.3);
+    color: var(--text); font-size: 1.2rem; padding: 12px 20px;
+    border-radius: 12px; text-align: center; width: 100%; max-width: 300px;
+    font-family: inherit; outline: none; transition: border-color 0.3s; margin-bottom: 20px;
+  }
+  .name-input:focus { border-color: var(--accent); }
+
+  .narrative { font-size: 1.1rem; line-height: 1.8; color: var(--text); margin-bottom: 30px; max-width: 650px; margin-left: auto; margin-right: auto; }
+  .narrative em { color: var(--accent); font-style: normal; font-weight: 600; }
+
+  /* Game Layout - side by side */
+  .game-layout {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .game-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .game-right {
+    width: 380px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+  }
+
+  @media (max-width: 800px) {
+    .game-layout {
+      flex-direction: column-reverse;
+    }
+    .game-right {
+      width: 100%;
+      position: static;
+    }
+  }
+
+  /* Staircase */
+  .staircase-container {
+    position: relative;
+    height: min(75vh, 640px);
+    width: 100%;
+    margin: 0 auto 20px;
+    border-radius: 16px;
+    background: linear-gradient(to top,
+      rgba(30, 25, 40, 0.8) 0%,
+      rgba(20, 20, 50, 0.6) 40%,
+      rgba(40, 35, 80, 0.4) 70%,
+      rgba(255, 215, 0, 0.08) 100%
+    );
+    overflow: hidden;
+    border: 1px solid rgba(232, 184, 74, 0.1);
+  }
+
+  .heaven-label {
+    position: absolute;
+    top: 8px; right: 12px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--heaven-gold);
+    opacity: 0.7;
+  }
+
+  .earth-label {
+    position: absolute;
+    bottom: 8px; left: 12px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  .heaven-glow {
+    position: absolute;
+    top: -30px; right: -10px;
+    width: 180px; height: 100px;
+    background: radial-gradient(ellipse, rgba(255, 215, 0, 0.25), transparent);
+    animation: heavenlyPulse 4s ease infinite;
+    pointer-events: none;
+  }
+
+  .stair-step {
+    position: absolute;
+    width: 60px;
+    height: 14px;
+    background: linear-gradient(to bottom, #c9a87c, #a08060);
+    border-top: 2px solid #ddc8a0;
+    border-radius: 2px;
+    transition: all 0.5s ease;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+  }
+
+  .stair-step.current {
+    background: linear-gradient(to bottom, #e8c878, #c0a050);
+    border-top-color: #f0dc98;
+    box-shadow: 0 0 15px rgba(232, 184, 74, 0.4), 0 3px 6px rgba(0,0,0,0.3);
+  }
+
+  .stair-step.below-current { opacity: 0.5; }
+  .stair-step.above-current { opacity: 0.7; }
+
+  .stair-character {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+    text-align: center;
+    font-size: 1.6rem;
+    line-height: 36px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+
+  .stair-character img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  .score-position-label {
+    position: absolute;
+    right: 12px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    transition: all 0.8s ease;
+    white-space: nowrap;
+  }
+
+  .angel-particle {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: rgba(255, 215, 0, 0.6);
+    border-radius: 50%;
+    animation: floatAngel 6s ease infinite;
+    pointer-events: none;
+  }
+
+  /* Question Header */
+  .question-header { text-align: center; margin-bottom: 20px; }
+  .question-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 4px; color: var(--text-dim); }
+  .question-number { font-size: 2rem; font-weight: 900; color: var(--accent); }
+  .question-title { font-size: 1rem; color: var(--text-dim); margin-top: 4px; font-weight: 600; }
+
+  /* Scenario Card */
+  .scenario-card {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    line-height: 1.8;
+    border-left: 4px solid var(--accent);
+    font-size: 1rem;
+  }
+
+  /* Response Area */
+  .response-area { margin-bottom: 20px; }
+  .response-prompt { font-size: 0.9rem; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+
+  .response-textarea {
+    width: 100%; min-height: 120px; max-height: 300px;
+    background: var(--bg-card); border: 2px solid rgba(232, 184, 74, 0.2);
+    color: var(--text); font-size: 1rem; padding: 16px; border-radius: 12px;
+    font-family: inherit; line-height: 1.6; outline: none;
+    transition: border-color 0.3s; resize: vertical;
+  }
+  .response-textarea:focus { border-color: var(--accent); }
+  .response-textarea::placeholder { color: var(--text-dim); }
+
+  .char-count { text-align: right; font-size: 0.8rem; color: var(--text-dim); margin-top: 6px; margin-bottom: 12px; }
+  .char-count.warning { color: var(--negative); }
+
+  /* Loading */
+  .loading-area { text-align: center; padding: 40px 20px; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(232, 184, 74, 0.2);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+  }
+  .loading-text { color: var(--text-dim); font-size: 0.95rem; }
+
+  /* Evaluation Result */
+  .eval-result {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+    animation: slideUp 0.5s ease;
+  }
+
+  .score-change {
+    text-align: center;
+    margin-bottom: 16px;
+    animation: scorePopIn 0.5s ease;
+  }
+
+  .score-change-value {
+    font-size: 2.8rem;
+    font-weight: 900;
+    display: inline-block;
+  }
+
+  .score-change-value.positive { color: var(--positive); }
+  .score-change-value.negative { color: var(--negative); }
+  .score-change-value.neutral { color: var(--neutral); }
+
+  .score-change-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  .score-change-label.positive { color: var(--positive); }
+  .score-change-label.negative { color: var(--negative); }
+  .score-change-label.neutral { color: var(--neutral); }
+
+  .eval-feedback {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .eval-scripture {
+    background: linear-gradient(135deg, rgba(232, 184, 74, 0.08), rgba(232, 184, 74, 0.02));
+    border: 1px solid rgba(232, 184, 74, 0.15);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .eval-scripture-text {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text);
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+
+  .eval-scripture-ref {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Results Screen */
+  #screen-results { max-width: 700px; margin: 0 auto; }
+  .results-header { text-align: center; margin-bottom: 30px; }
+
+  .results-final-step {
+    font-size: 4rem;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+
+  .results-subtitle {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 8px;
+  }
+
+  .results-message {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+    line-height: 1.8;
+    font-size: 1.05rem;
+    text-align: center;
+  }
+
+  .results-journey {
+    margin-bottom: 24px;
+  }
+
+  .journey-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .journey-entry {
+    background: var(--bg-card);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .journey-entry-score {
+    font-weight: 900;
+    font-size: 1.1rem;
+    width: 40px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .journey-entry-score.positive { color: var(--positive); }
+  .journey-entry-score.negative { color: var(--negative); }
+  .journey-entry-score.neutral { color: var(--neutral); }
+
+  .journey-entry-title {
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .scripture-box {
+    background: linear-gradient(135deg, rgba(232, 184, 74, 0.1), rgba(232, 184, 74, 0.02));
+    border: 1px solid rgba(232, 184, 74, 0.2);
+    border-radius: 14px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+
+  .scripture-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text);
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+
+  .scripture-ref {
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .text-center { text-align: center; }
+  .mt-20 { margin-top: 20px; }
+  .mb-20 { margin-bottom: 20px; }
+
+  @media (max-width: 800px) {
+    .staircase-container { height: 300px; }
+  }
+
+  @media (max-width: 500px) {
+    .title-main { font-size: 2.6rem; }
+    #game { padding: 16px; }
+    .scenario-card { padding: 18px 16px; font-size: 0.95rem; }
+    .staircase-container { height: 260px; }
+    .stair-step { width: 50px; height: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game">
+
+  <!-- TITLE SCREEN -->
+  <div id="screen-title" class="screen active fade-in">
+    <div class="title-container">
+      <div class="title-pre">A Deacon's Quorum Experience</div>
+      <div class="title-main">Jacob's Ladder</div>
+      <div class="title-scripture">"And he dreamed, and behold a ladder set up on the earth, and the top of it reached to heaven: and behold the angels of God ascending and descending on it."</div>
+      <div class="title-ref">Genesis 28:12</div>
+      <div>
+        <input type="text" id="player-name" class="name-input" placeholder="Your first name" maxlength="20" autocomplete="off">
+      </div>
+      <button class="btn" id="btn-start">Begin the Climb</button>
+    </div>
+  </div>
+
+  <!-- INTRO SCREEN -->
+  <div id="screen-intro" class="screen">
+    <div style="padding-top: 8vh;">
+      <p class="narrative" id="intro-text"></p>
+      <div class="text-center mt-20">
+        <button class="btn" id="btn-intro-next">I'm ready</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div class="game-layout">
+      <div class="game-left">
+        <div class="question-header">
+          <div class="question-label">Question</div>
+          <div class="question-number" id="question-number">1 of 10</div>
+          <div class="question-title" id="question-title"></div>
+        </div>
+        <div id="game-content"></div>
+      </div>
+      <div class="game-right">
+        <div class="staircase-container" id="staircase"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="screen-results" class="screen"></div>
+</div>
+
+<script>
+// ============================================================
+// SCENARIOS - 10 moral dilemmas for 12-year-old boys
+// ============================================================
+
+const SCENARIOS = [
+  {
+    title: "The Mean Joke",
+    scenario: `Your friend Bob tells a really mean joke about your other friend Fred during lunch. Everyone at the table laughs—except Fred, who goes quiet and stares down at his food. You can tell he's hurt.\n\nAfter lunch, Fred pulls you aside near the lockers: "I don't want Bob hanging out with us anymore. That was messed up."\n\nBob texts the group chat later that night: "Fred needs to lighten up, it was just a joke lol."\n\nBoth of them consider you their closest friend. They're both waiting to see whose side you take.`,
+    prompt: "What do you do?"
+  },
+  {
+    title: "The Eye Roll",
+    scenario: `You're at dinner with your family. You start telling everyone about something cool that happened at school today—you got picked for the science fair team and you're actually excited about it.\n\nYour brother rolls his eyes dramatically and mutters "nobody cares." Your mom is busy getting food on the table and didn't see it. Your dad noticed but didn't say anything.\n\nYour brother smirks at you across the table, waiting for your reaction. Your little sister looks uncomfortable.`,
+    prompt: "What do you do? What do you say—or not say?"
+  },
+  {
+    title: "The Group Chat",
+    scenario: `Your friends have a group chat on Snapchat. Today they've been roasting Marcus, a kid from your ward who's a little different—he's really into dinosaurs and still brings a lunchbox to school in 7th grade.\n\nThe jokes started small, but now someone posted a picture of him eating alone with a vomit emoji and everyone's sending laughing emojis. Someone tags you: "bro add something this is gold 😂"\n\nMarcus isn't in the chat. He has no idea this is happening.`,
+    prompt: "What do you do? Be honest."
+  },
+  {
+    title: "The Broken Game",
+    scenario: `Your friend Ethan let you borrow his brand new video game—the one he saved up for months to buy. While you had it at your house, your little brother got ahold of it and scratched the disc so badly it won't load anymore.\n\nIt's a $60 game. Ethan texts you: "Hey can I get my game back tomorrow? I've been wanting to play it all week."\n\nYou could easily say it was already messed up when he gave it to you—he'd probably believe it. You have $60 in birthday money you were saving for something you really wanted.`,
+    prompt: "What do you do?"
+  },
+  {
+    title: "The Shoplifting Dare",
+    scenario: `You and your friends stop at the Maverik gas station on the way home from school. Your friend Tyler slips a candy bar into his pocket, then grins at you.\n\n"Your turn," he whispers. "Don't be a chicken. They have a million of these, they won't even notice."\n\nYour other two friends are watching. Tyler already did it. If you don't, you know they'll give you a hard time about it—probably for weeks. One of them is already smirking like he expects you to back down.`,
+    prompt: "What do you do? Walk me through what's going through your head."
+  },
+  {
+    title: "The Lonely New Kid",
+    scenario: `There's a new kid named David who just moved to Provo from out of state. He's not a member of the Church, doesn't know anyone, and has been eating lunch alone for two weeks straight.\n\nToday your friend group has a full table and someone would have to scoot over to make room. When you mention maybe inviting David over, your friend says: "Dude, he's so weird. He doesn't even know what a deacon is. He'll make things awkward."\n\nDavid is sitting two tables away, staring at his phone. You can tell he's not actually looking at anything.`,
+    prompt: "What do you do?"
+  },
+  {
+    title: "The Toxic Teammate",
+    scenario: `You're playing online with your squad after school. A random player joins your team and makes a mistake that costs a round.\n\nYour friend Jake starts going off on them—calling them names, telling them to uninstall the game, saying really cruel stuff. The random player types "sorry, I'm new to this game" and goes quiet.\n\nYour other friends are laughing at Jake's roasts. Jake says to you: "Right bro? This kid is trash. Tell him."`,
+    prompt: "What do you do or say?"
+  },
+  {
+    title: "The Inappropriate Video",
+    scenario: `You're at your friend's house after school. His older brother pulls out his phone and shows you guys a video that's really inappropriate—the kind of thing you know you shouldn't be watching. The kind of thing that makes your stomach feel weird.\n\nYour friend thinks it's hilarious. His older brother says "there's way more, wanna see?" and is already scrolling.\n\nYour friend is saying yes. You're the only one who seems uncomfortable. Your ride home isn't coming for another hour.`,
+    prompt: "What do you do? Be specific about what you say and what you actually do."
+  },
+  {
+    title: "The Test",
+    scenario: `You're taking a big math test—the one your parents said you need to pass or you're losing video game privileges for a month. You studied, but you're stuck on the last five problems and time is running out.\n\nThe kid next to you—who always gets A's—goes to the bathroom and leaves his paper barely covered. You can see every answer. Nobody is watching. The teacher is on her computer.\n\nFive problems. Easy to copy. No one would ever know.`,
+    prompt: "What do you do? And why?"
+  },
+  {
+    title: "The Testimony",
+    scenario: `It's Fast Sunday at your ward. A kid named Ryan gets up to bear his testimony. Ryan is kind of awkward—he doesn't have many friends and he's always a little nervous around people.\n\nBut today he's up there pouring his heart out. His voice is shaking and he says some things that come out a little funny. He's being completely sincere.\n\nYour friend sitting next to you in the chapel starts quietly imitating Ryan's voice and making faces. A couple of kids in your row are biting their lips trying not to laugh. Ryan is still talking, trying so hard to share what he feels.`,
+    prompt: "What do you do in that moment?"
+  }
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+
+const state = {
+  playerName: '',
+  questionIndex: 0,
+  totalScore: 0,
+  currentStep: 7,  // Start at middle of 0-14 staircase
+  responses: [],
+  results: [],
+  phase: 'title'
+};
+
+const INITIAL_STEPS = 15;  // Steps 0-14 to start
+const START_STEP = 7;
+let TOTAL_STEPS = INITIAL_STEPS;
+
+// ============================================================
+// DOM HELPERS
+// ============================================================
+
+function $(id) { return document.getElementById(id); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active', 'fade-in'));
+  const screen = $(id);
+  screen.classList.add('active', 'fade-in');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function typeWriter(element, text, speed = 18) {
+  return new Promise(resolve => {
+    element.innerHTML = '';
+    let i = 0;
+    function type() {
+      if (i < text.length) {
+        if (text[i] === '<') {
+          const endTag = text.indexOf('>', i);
+          element.innerHTML += text.substring(i, endTag + 1);
+          i = endTag + 1;
+        } else {
+          element.innerHTML += text[i];
+          i++;
+        }
+        setTimeout(type, speed);
+      } else { resolve(); }
+    }
+    type();
+  });
+}
+
+// ============================================================
+// STAIRCASE RENDERING
+// ============================================================
+
+function renderStaircase() {
+  const container = $('staircase');
+  container.innerHTML = '';
+
+  // Heaven glow
+  const glow = document.createElement('div');
+  glow.className = 'heaven-glow';
+  container.appendChild(glow);
+
+  // Labels
+  const heavenLabel = document.createElement('div');
+  heavenLabel.className = 'heaven-label';
+  heavenLabel.textContent = 'Closer to God';
+  container.appendChild(heavenLabel);
+
+  const earthLabel = document.createElement('div');
+  earthLabel.className = 'earth-label';
+  earthLabel.textContent = 'Further Away';
+  container.appendChild(earthLabel);
+
+  // Steps
+  const containerHeight = container.offsetHeight || 340;
+  const stepSpacing = (containerHeight - 40) / (TOTAL_STEPS - 1);
+  // Scale horizontal spread so steps always fit (max ~75% width used)
+  const hSpread = Math.min(4, 56 / (TOTAL_STEPS - 1));
+
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const step = document.createElement('div');
+    step.className = 'stair-step';
+    step.dataset.step = i;
+
+    if (i === state.currentStep) {
+      step.classList.add('current');
+    } else if (i < state.currentStep) {
+      step.classList.add('below-current');
+    } else {
+      step.classList.add('above-current');
+    }
+
+    const bottomPos = 15 + i * stepSpacing;
+    const leftPos = 5 + i * hSpread;
+
+    step.style.bottom = bottomPos + 'px';
+    step.style.left = leftPos + '%';
+
+    container.appendChild(step);
+  }
+
+  // Character
+  const char = document.createElement('div');
+  char.className = 'stair-character';
+  char.id = 'stair-character';
+
+  const charBottom = 15 + state.currentStep * stepSpacing + 16;
+  const charLeft = 5 + state.currentStep * hSpread + 1.5;
+
+  char.style.bottom = charBottom + 'px';
+  char.style.left = charLeft + '%';
+  char.innerHTML = '<img src="sprites/character.png" onerror="this.parentElement.textContent=\'🧒\'" alt="You">';
+  container.appendChild(char);
+
+  // Position label
+  const posLabel = document.createElement('div');
+  posLabel.className = 'score-position-label';
+  posLabel.id = 'position-label';
+  posLabel.style.bottom = (charBottom - 5) + 'px';
+  posLabel.textContent = getPositionText(state.currentStep);
+  container.appendChild(posLabel);
+
+  // Angel particles
+  for (let i = 0; i < 3; i++) {
+    const angel = document.createElement('div');
+    angel.className = 'angel-particle';
+    angel.style.left = (15 + Math.random() * 60) + '%';
+    angel.style.bottom = (Math.random() * 40) + 'px';
+    angel.style.animationDelay = (i * 2.2) + 's';
+    angel.style.animationDuration = (5 + Math.random() * 3) + 's';
+    container.appendChild(angel);
+  }
+}
+
+function getPositionText() {
+  const score = state.totalScore;
+  if (score >= 15) return "In God's presence";
+  if (score >= 10) return "Walking with God";
+  if (score >= 6) return "Drawing nearer";
+  if (score >= 3) return "Climbing higher";
+  if (score >= 1) return "On the path";
+  if (score === 0) return "Starting point";
+  if (score >= -2) return "Finding your way";
+  if (score >= -5) return "Struggling";
+  if (score >= -10) return "Slipping away";
+  return "Lost in darkness";
+}
+
+function animateStepChange(newStep) {
+  // Expand the staircase if needed
+  let needsRerender = false;
+  if (newStep < 0) {
+    // Add steps below: shift everything up
+    const stepsToAdd = Math.abs(newStep) + 2;
+    TOTAL_STEPS += stepsToAdd;
+    state.currentStep += stepsToAdd;
+    newStep += stepsToAdd;
+    // Also shift START_STEP reference for results
+    state.startStepOffset = (state.startStepOffset || 0) + stepsToAdd;
+    needsRerender = true;
+  } else if (newStep >= TOTAL_STEPS) {
+    // Add steps above
+    const stepsToAdd = (newStep - TOTAL_STEPS) + 3;
+    TOTAL_STEPS += stepsToAdd;
+    needsRerender = true;
+  }
+
+  state.currentStep = newStep;
+
+  if (needsRerender) {
+    // Re-render the whole staircase with new step count
+    renderStaircase();
+    return;
+  }
+
+  const container = $('staircase');
+  const containerHeight = container.offsetHeight || 340;
+  const stepSpacing = (containerHeight - 40) / (TOTAL_STEPS - 1);
+  const hSpread = Math.min(4, 56 / (TOTAL_STEPS - 1));
+
+  // Update character position
+  const char = $('stair-character');
+  if (char) {
+    const charBottom = 15 + state.currentStep * stepSpacing + 16;
+    const charLeft = 5 + state.currentStep * hSpread + 1.5;
+    char.style.bottom = charBottom + 'px';
+    char.style.left = charLeft + '%';
+
+    // Bounce animation
+    char.style.animation = 'none';
+    char.offsetHeight; // trigger reflow
+    char.style.animation = 'stepBounce 0.6s ease 0.4s';
+  }
+
+  // Update position label
+  const posLabel = $('position-label');
+  if (posLabel) {
+    const labelBottom = 15 + state.currentStep * stepSpacing + 11;
+    posLabel.style.bottom = labelBottom + 'px';
+    posLabel.textContent = getPositionText(state.currentStep);
+  }
+
+  // Update step highlights
+  document.querySelectorAll('.stair-step').forEach(el => {
+    const stepIdx = parseInt(el.dataset.step);
+    el.classList.remove('current', 'below-current', 'above-current');
+    if (stepIdx === state.currentStep) {
+      el.classList.add('current');
+    } else if (stepIdx < state.currentStep) {
+      el.classList.add('below-current');
+    } else {
+      el.classList.add('above-current');
+    }
+  });
+}
+
+// ============================================================
+// LLM INTEGRATION
+// ============================================================
+
+async function callLLM(scenario, response, questionNum) {
+  try {
+    const res = await fetch('/api/evaluate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario, response, questionNumber: questionNum })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server error ${res.status}`);
+    }
+
+    return await res.json();
+  } catch (error) {
+    console.error('LLM call failed:', error);
+    return fallbackScoring(response);
+  }
+}
+
+function fallbackScoring(response) {
+  const lower = response.toLowerCase();
+  let score = 0;
+
+  const positive = ['help', 'kind', 'honest', 'pray', 'forgive', 'friend', 'love',
+    'sorry', 'talk', 'listen', 'truth', 'right', 'serve', 'include', 'sit with'];
+  const negative = ['ignore', 'steal', 'lie', 'laugh', 'mean', 'hit', 'punch',
+    'fight', 'revenge', 'mock', 'bully', 'copy', 'take', 'cheat'];
+
+  const posCount = positive.filter(w => lower.includes(w)).length;
+  const negCount = negative.filter(w => lower.includes(w)).length;
+  score = Math.min(2, posCount) - Math.min(2, negCount);
+  if (response.length > 150) score = Math.min(3, score + 1);
+
+  return {
+    score: score,
+    feedback: "Your response shows thought and care. (AI evaluation was unavailable—simplified scoring used.)",
+    scripture: "Proverbs 3:5-6",
+    scripture_text: "Trust in the Lord with all thine heart; and lean not unto thine own understanding. In all thy ways acknowledge him, and he shall direct thy paths."
+  };
+}
+
+// ============================================================
+// TITLE & INTRO
+// ============================================================
+
+$('btn-start').addEventListener('click', () => {
+  const name = $('player-name').value.trim();
+  if (!name) {
+    $('player-name').style.borderColor = 'var(--negative)';
+    $('player-name').focus();
+    return;
+  }
+  state.playerName = name;
+  showScreen('screen-intro');
+
+  const introText = `<em>${name}</em>, in the Book of Genesis, Jacob laid his head on a stone and dreamed of a ladder reaching from the earth all the way to heaven—with angels going up and down.<br><br>That ladder is a lot like your life. Every day, the choices you make move you <em>closer to God</em> or <em>further away</em>. Not big dramatic choices—real ones. The kind you actually face at school, at home, online, and at church.<br><br>You're about to face <em>10 situations</em>. There are no multiple choice answers. You have to say what you'd actually do, in your own words.<br><br>Your answers will be evaluated, and your character will climb higher or slip lower on the ladder.<br><br><em>Where will you end up?</em>`;
+  typeWriter($('intro-text'), introText, 15);
+});
+
+$('player-name').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') $('btn-start').click();
+});
+
+$('btn-intro-next').addEventListener('click', () => {
+  state.phase = 'game';
+  state.currentStep = START_STEP;
+  showScreen('screen-game');
+  renderStaircase();
+  renderQuestion();
+});
+
+// ============================================================
+// GAME PHASE
+// ============================================================
+
+function renderQuestion() {
+  const scenario = SCENARIOS[state.questionIndex];
+  $('question-number').textContent = `${state.questionIndex + 1} of 10`;
+  $('question-title').textContent = scenario.title;
+
+  const content = $('game-content');
+  content.innerHTML = `
+    <div class="scenario-card">${scenario.scenario.replace(/\n/g, '<br>')}</div>
+    <div class="response-area" id="response-area">
+      <div class="response-prompt">${scenario.prompt}</div>
+      <textarea class="response-textarea" id="player-response" placeholder="Type your honest response here..." rows="5"></textarea>
+      <div class="char-count" id="char-count">0 characters (minimum 20)</div>
+      <div class="text-center">
+        <button class="btn" id="btn-submit" disabled>Submit Response</button>
+      </div>
+    </div>
+    <div id="loading-area" style="display:none;" class="loading-area">
+      <div class="spinner"></div>
+      <div class="loading-text">Reading your response...</div>
+    </div>
+    <div id="eval-area" style="display:none;"></div>
+    <div id="next-area" style="display:none;"></div>
+  `;
+
+  const textarea = $('player-response');
+  const charCount = $('char-count');
+  const submitBtn = $('btn-submit');
+
+  textarea.addEventListener('input', () => {
+    const len = textarea.value.trim().length;
+    charCount.textContent = `${len} character${len !== 1 ? 's' : ''} (minimum 20)`;
+    charCount.classList.toggle('warning', len > 0 && len < 20);
+    submitBtn.disabled = len < 20;
+  });
+
+  submitBtn.addEventListener('click', () => submitResponse(scenario));
+
+  textarea.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !submitBtn.disabled) {
+      submitResponse(scenario);
+    }
+  });
+
+  setTimeout(() => textarea.focus(), 300);
+}
+
+async function submitResponse(scenario) {
+  const textarea = $('player-response');
+  const response = textarea.value.trim();
+  if (response.length < 20) return;
+
+  // Store response
+  state.responses.push({ question: state.questionIndex + 1, title: scenario.title, response });
+
+  // Show loading
+  $('response-area').style.display = 'none';
+  $('loading-area').style.display = 'block';
+
+  // Call LLM
+  const evalData = await callLLM(
+    scenario.scenario + '\n\n' + scenario.prompt,
+    response,
+    state.questionIndex + 1
+  );
+
+  // Apply score
+  const score = evalData.score;
+  state.totalScore += score;
+  const newStep = state.currentStep + score;
+
+  // Store result
+  state.results.push({
+    question: state.questionIndex + 1,
+    title: scenario.title,
+    score: score,
+    feedback: evalData.feedback,
+    scripture: evalData.scripture,
+    scripture_text: evalData.scripture_text
+  });
+
+  // Hide loading, show eval
+  $('loading-area').style.display = 'none';
+  $('eval-area').style.display = 'block';
+
+  // Determine score class
+  let scoreClass = 'neutral';
+  let scorePrefix = '';
+  let moveText = 'You stay where you are.';
+  if (score > 0) {
+    scoreClass = 'positive';
+    scorePrefix = '+';
+    moveText = `You climb ${score === 1 ? '1 step' : score + ' steps'} higher.`;
+  } else if (score < 0) {
+    scoreClass = 'negative';
+    moveText = `You slip ${Math.abs(score) === 1 ? '1 step' : Math.abs(score) + ' steps'} lower.`;
+  }
+
+  $('eval-area').innerHTML = `
+    <div class="eval-result">
+      <div class="score-change">
+        <div class="score-change-value ${scoreClass}">${scorePrefix}${score}</div>
+        <div class="score-change-label ${scoreClass}">${moveText}</div>
+      </div>
+      <div class="eval-feedback">${evalData.feedback}</div>
+      <div class="eval-scripture">
+        <div class="eval-scripture-text">"${evalData.scripture_text}"</div>
+        <div class="eval-scripture-ref">— ${evalData.scripture}</div>
+      </div>
+    </div>
+  `;
+
+  // Animate staircase
+  setTimeout(() => animateStepChange(newStep), 300);
+
+  // Show next button
+  setTimeout(() => {
+    $('next-area').style.display = 'block';
+    const isLast = state.questionIndex >= SCENARIOS.length - 1;
+    $('next-area').innerHTML = `<div class="text-center mt-20">
+      <button class="btn" id="btn-next">${isLast ? 'See Your Journey' : 'Next Question'}</button>
+    </div>`;
+
+    $('btn-next').addEventListener('click', () => {
+      state.questionIndex++;
+      if (state.questionIndex >= SCENARIOS.length) {
+        showResults();
+      } else {
+        renderStaircase();
+        renderQuestion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }, 800);
+}
+
+// ============================================================
+// RESULTS SCREEN
+// ============================================================
+
+function showResults() {
+  const finalStep = state.currentStep;
+  const totalScore = state.totalScore;
+
+  let title, message, emoji;
+  if (totalScore >= 15) {
+    emoji = '✨';
+    title = 'In God\'s Presence';
+    message = `${state.playerName}, your choices reflect a heart that's truly trying to follow the Savior. You showed courage, kindness, and integrity—even when it was hard. Jacob saw angels on that ladder, and today you climbed toward them. Keep going. The world needs people like you.`;
+  } else if (totalScore >= 10) {
+    emoji = '🌟';
+    title = 'Walking with God';
+    message = `${state.playerName}, you made some really good choices today. You showed that you want to do what's right, even when the pressure is on. There's still room to grow—there always is—but you're headed in the right direction. The Lord sees your effort.`;
+  } else if (totalScore >= 5) {
+    emoji = '🪜';
+    title = 'Climbing Higher';
+    message = `${state.playerName}, you're making progress on the ladder. Some of your choices showed real character, and some had room to grow. That's normal—that's life. What matters is that you keep climbing. Every good choice is another rung.`;
+  } else if (totalScore >= 0) {
+    emoji = '🌅';
+    title = 'On the Path';
+    message = `${state.playerName}, you're right about where you started. Some choices lifted you up, and some pulled you down. The good news? Every day is a new chance to climb. The ladder is still there. The question is whether you'll reach for the next rung.`;
+  } else if (totalScore >= -5) {
+    emoji = '🌧️';
+    title = 'Finding Your Way';
+    message = `${state.playerName}, some of your choices today moved you further from where you want to be. But here's the thing about Jacob's Ladder—it doesn't disappear. It's always there. The Savior's hand is always extended. You can start climbing again right now.`;
+  } else {
+    emoji = '🕯️';
+    title = 'A Light in the Dark';
+    message = `${state.playerName}, today was tough. A lot of your choices pulled you away from the person you're meant to become. But remember—even in his darkest moment, Jacob found a ladder reaching to heaven. It's there for you too. Every single day, you get to choose again. Start climbing.`;
+  }
+
+  // Build journey entries
+  const journeyHTML = state.results.map(r => {
+    const scoreClass = r.score > 0 ? 'positive' : r.score < 0 ? 'negative' : 'neutral';
+    const prefix = r.score > 0 ? '+' : '';
+    return `<div class="journey-entry">
+      <div class="journey-entry-score ${scoreClass}">${prefix}${r.score}</div>
+      <div class="journey-entry-title">${r.title}</div>
+    </div>`;
+  }).join('');
+
+  $('screen-results').innerHTML = `
+    <div class="results-header" style="padding-top: 4vh;">
+      <div style="font-size: 3rem; margin-bottom: 8px;">${emoji}</div>
+      <div class="results-final-step" style="color: var(--accent);">${totalScore > 0 ? '+' : ''}${totalScore}</div>
+      <div style="font-size: 1.4rem; font-weight: 700; margin-top: 4px;">${title}</div>
+      <div class="results-subtitle">${totalScore > 0 ? totalScore + ' steps above' : totalScore < 0 ? Math.abs(totalScore) + ' steps below' : 'Right at'} where you started</div>
+    </div>
+
+    <div class="staircase-container" id="staircase-final"></div>
+
+    <div class="results-message">${message}</div>
+
+    <div class="results-journey">
+      <div class="journey-title">Your Journey</div>
+      ${journeyHTML}
+    </div>
+
+    <div class="scripture-box">
+      <div class="scripture-text">"And he dreamed, and behold a ladder set up on the earth, and the top of it reached to heaven: and behold the angels of God ascending and descending on it. And, behold, the Lord stood above it."</div>
+      <div class="scripture-ref">— Genesis 28:12-13</div>
+    </div>
+
+    <div class="scripture-box" style="margin-bottom: 40px;">
+      <div class="scripture-text">"And if men come unto me I will show unto them their weakness. I give unto men weakness that they may be humble; and my grace is sufficient for all men that humble themselves before me; for if they humble themselves before me, and have faith in me, then will I make weak things become strong unto them."</div>
+      <div class="scripture-ref">— Ether 12:27</div>
+    </div>
+
+    <div class="text-center mb-20">
+      <button class="btn" onclick="location.reload()">Play Again</button>
+    </div>
+  `;
+
+  showScreen('screen-results');
+
+  // Render final staircase
+  setTimeout(() => {
+    const finalContainer = $('staircase-final');
+    if (finalContainer) {
+      // Clone staircase rendering for results
+      renderFinalStaircase(finalContainer);
+    }
+  }, 100);
+}
+
+function renderFinalStaircase(container) {
+  container.innerHTML = '';
+
+  const glow = document.createElement('div');
+  glow.className = 'heaven-glow';
+  container.appendChild(glow);
+
+  const heavenLabel = document.createElement('div');
+  heavenLabel.className = 'heaven-label';
+  heavenLabel.textContent = 'Closer to God';
+  container.appendChild(heavenLabel);
+
+  const earthLabel = document.createElement('div');
+  earthLabel.className = 'earth-label';
+  earthLabel.textContent = 'Further Away';
+  container.appendChild(earthLabel);
+
+  const containerHeight = container.offsetHeight || 340;
+  const stepSpacing = (containerHeight - 40) / (TOTAL_STEPS - 1);
+  const hSpread = Math.min(4, 56 / (TOTAL_STEPS - 1));
+
+  for (let i = 0; i < TOTAL_STEPS; i++) {
+    const step = document.createElement('div');
+    step.className = 'stair-step';
+    step.dataset.step = i;
+
+    if (i === state.currentStep) step.classList.add('current');
+    else if (i < state.currentStep) step.classList.add('below-current');
+    else step.classList.add('above-current');
+
+    step.style.bottom = (15 + i * stepSpacing) + 'px';
+    step.style.left = (5 + i * hSpread) + '%';
+    container.appendChild(step);
+  }
+
+  const char = document.createElement('div');
+  char.className = 'stair-character';
+  char.style.bottom = (15 + state.currentStep * stepSpacing + 16) + 'px';
+  char.style.left = (5 + state.currentStep * hSpread + 1.5) + '%';
+  char.innerHTML = '<img src="sprites/character.png" onerror="this.parentElement.textContent=\'🧒\'" alt="You">';
+  container.appendChild(char);
+
+  const posLabel = document.createElement('div');
+  posLabel.className = 'score-position-label';
+  posLabel.style.bottom = (15 + state.currentStep * stepSpacing + 11) + 'px';
+  posLabel.textContent = getPositionText(state.currentStep);
+  container.appendChild(posLabel);
+
+  for (let i = 0; i < 4; i++) {
+    const angel = document.createElement('div');
+    angel.className = 'angel-particle';
+    angel.style.left = (15 + Math.random() * 60) + '%';
+    angel.style.bottom = (Math.random() * 40) + 'px';
+    angel.style.animationDelay = (i * 1.8) + 's';
+    angel.style.animationDuration = (5 + Math.random() * 3) + 's';
+    container.appendChild(angel);
+  }
+}
+
+</script>
+</body>
+</html>
